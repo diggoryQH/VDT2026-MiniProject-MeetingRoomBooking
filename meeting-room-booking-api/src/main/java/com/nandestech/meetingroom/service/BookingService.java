@@ -351,13 +351,23 @@ public class BookingService {
             // Notify attendees
             if (savedBooking.getAttendeeIds() != null && !savedBooking.getAttendeeIds().isEmpty()) {
                 for (Long attendeeId : savedBooking.getAttendeeIds()) {
-                    notificationService.createNotification(
-                            attendeeId,
-                            "BOOKING_INVITATION",
-                            "Meeting Invitation",
-                            "You have been invited to a meeting by " + requester.getName() + " on " + savedBooking.getStartTime().format(DATE_FORMAT),
-                            savedBooking.getId()
-                    );
+                    userRepository.findById(attendeeId).ifPresent(attendee -> {
+                        notificationService.createNotification(
+                                attendeeId,
+                                "BOOKING_INVITATION",
+                                "Meeting Invitation",
+                                "You have been invited to a meeting by " + requester.getName() + " on " + savedBooking.getStartTime().format(DATE_FORMAT),
+                                savedBooking.getId()
+                        );
+                        String htmlBodyAttendee = emailService.buildBookingStatusTemplate(
+                                attendee.getName(), 
+                                roomName, 
+                                savedBooking.getStartTime().format(DATE_FORMAT), 
+                                "APPROVED", 
+                                null
+                        );
+                        emailService.sendEmailAsync(attendee.getEmail(), "Thông báo: Mời tham gia cuộc họp", htmlBodyAttendee);
+                    });
                 }
             }
         });
@@ -444,9 +454,52 @@ public class BookingService {
         booking.setStatus(BookingStatus.CANCELLED);
         booking.setCancelReason(reason);
         booking.setUpdatedAt(LocalDateTime.now());
-        booking = bookingRepository.save(booking);
+        final Booking savedBooking = bookingRepository.save(booking);
 
-        return toResponse(booking);
+        userRepository.findById(savedBooking.getUserId()).ifPresent(requester -> {
+            String roomName = roomRepository.findById(savedBooking.getRoomId()).map(Room::getName).orElse("Unknown Room");
+            
+            notificationService.createNotification(
+                    requester.getId(),
+                    "BOOKING_CANCELLED",
+                    "Booking Cancelled",
+                    "Your booking for " + roomName + " has been cancelled. Reason: " + reason,
+                    savedBooking.getId()
+            );
+            
+            String htmlBodyRequester = emailService.buildBookingStatusTemplate(
+                    requester.getName(), 
+                    roomName, 
+                    savedBooking.getStartTime().format(DATE_FORMAT), 
+                    "CANCELLED", 
+                    reason
+            );
+            emailService.sendEmailAsync(requester.getEmail(), "Thông báo: Lịch đặt phòng đã bị hủy", htmlBodyRequester);
+
+            if (savedBooking.getAttendeeIds() != null && !savedBooking.getAttendeeIds().isEmpty()) {
+                for (Long attendeeId : savedBooking.getAttendeeIds()) {
+                    userRepository.findById(attendeeId).ifPresent(attendee -> {
+                        notificationService.createNotification(
+                                attendeeId,
+                                "BOOKING_CANCELLED",
+                                "Meeting Cancelled",
+                                "The meeting scheduled on " + savedBooking.getStartTime().format(DATE_FORMAT) + " has been cancelled.",
+                                savedBooking.getId()
+                        );
+                        String htmlBodyAttendee = emailService.buildBookingStatusTemplate(
+                                attendee.getName(), 
+                                roomName, 
+                                savedBooking.getStartTime().format(DATE_FORMAT), 
+                                "CANCELLED", 
+                                reason
+                        );
+                        emailService.sendEmailAsync(attendee.getEmail(), "Thông báo: Cuộc họp đã bị hủy", htmlBodyAttendee);
+                    });
+                }
+            }
+        });
+
+        return toResponse(savedBooking);
     }
 
     @Transactional

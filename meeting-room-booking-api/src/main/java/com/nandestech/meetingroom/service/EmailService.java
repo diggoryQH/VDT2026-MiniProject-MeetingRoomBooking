@@ -52,8 +52,15 @@ public class EmailService {
     }
 
     public String buildBookingStatusTemplate(String recipientName, String roomName, String startTime, String status, String reason) {
-        String color = status.equals("APPROVED") ? "#22c55e" : "#ef4444";
-        String statusText = status.equals("APPROVED") ? "Đã được duyệt" : "Bị từ chối";
+        String color = "#ef4444";
+        String statusText = "Bị từ chối";
+        if (status.equals("APPROVED")) {
+            color = "#22c55e";
+            statusText = "Đã được duyệt";
+        } else if (status.equals("CANCELLED")) {
+            color = "#f97316";
+            statusText = "Đã bị hủy";
+        }
         
         String reasonHtml = "";
         if (reason != null && !reason.isBlank()) {
