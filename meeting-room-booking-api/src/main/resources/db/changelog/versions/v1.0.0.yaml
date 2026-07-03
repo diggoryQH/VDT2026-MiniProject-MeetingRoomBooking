@@ -1,0 +1,183 @@
+databaseChangeLog:
+  - changeSet:
+      id: 0-enable-pgcrypto
+      author: nandes
+      changes:
+        - sql:
+            sql: CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+  - changeSet:
+      id: 1-create-users-table
+      author: nandes
+      changes:
+        - createTable:
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  type: int
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: username
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: email
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: password
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: role
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp
+                  defaultValueComputed: current_timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  defaultValueComputed: current_timestamp
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 2-create-rooms-table
+      author: nandes
+      changes:
+        - createTable:
+            tableName: rooms
+            columns:
+              - column:
+                  name: id
+                  type: int
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: capacity
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: location
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: is_available
+                  type: boolean
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp
+                  defaultValueComputed: current_timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  defaultValueComputed: current_timestamp
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 3-create-bookings-table
+      author: nandes
+      changes:
+        - createTable:
+            tableName: bookings
+            columns:
+              - column:
+                  name: id
+                  type: int
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: room_id
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: start_time
+                  type: datetime
+                  constraints:
+                    nullable: false
+              - column:
+                  name: end_time
+                  type: datetime
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp
+                  defaultValueComputed: current_timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  defaultValueComputed: current_timestamp
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 4-add-bookings-foreign-keys
+      author: nandes
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: bookings
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_bookings_user
+        - addForeignKeyConstraint:
+            baseTableName: bookings
+            baseColumnNames: room_id
+            referencedTableName: rooms
+            referencedColumnNames: id
+            constraintName: fk_bookings_room

@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+@theme {
+  --color-viettel-red: #EE0033;
+  --color-viettel-red-dark: #C4002A;
+  --color-viettel-red-light: #FCE6EA;
+  --color-gray-bg: #F8F9FA;
+  
+  --radius-3xl: 1.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+
+  --font-outfit: "Outfit", sans-serif;
+  --font-inter: "Inter", sans-serif;
+}
+
+@layer base {
+  body {
+    @apply antialiased text-gray-900 bg-white;
+    font-family: var(--font-inter);
+  }
+
+  h1, h2, h3, h4, .font-display {
+    font-family: var(--font-outfit);
+  }
+}
+
+@layer utilities {
+  .fade-enter-active,
+  .fade-leave-active {
+    transition: opacity 0.3s ease;
+  }
+
+  .fade-enter-from,
+  .fade-leave-to {
+    opacity: 0;
+  }
+
+  /* Staggered Entrance Animation */
+  .stagger-item {
+    opacity: 0;
+    transform: translateY(10px);
+    animation: slideUp 0.4s ease forwards;
+  }
+
+  @keyframes slideUp {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  .glass {
+    @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-xl;
+  }
+}

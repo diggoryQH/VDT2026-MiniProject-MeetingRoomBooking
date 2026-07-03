@@ -1,0 +1,242 @@
+databaseChangeLog:
+  # ── Department table ──────────────────────────────────────────────
+  - changeSet:
+      id: 6-create-departments-table
+      author: nandes
+      changes:
+        - createTable:
+            tableName: departments
+            columns:
+              - column:
+                  name: id
+                  type: int
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: code
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp
+                  defaultValueComputed: current_timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  defaultValueComputed: current_timestamp
+                  constraints:
+                    nullable: false
+
+  # ── Seed Viettel departments ──────────────────────────────────────
+  - changeSet:
+      id: 7-seed-departments
+      author: nandes
+      changes:
+        - insert:
+            tableName: departments
+            columns:
+              - column: { name: code, value: "VTT" }
+              - column: { name: name, value: "Viettel Telecom" }
+        - insert:
+            tableName: departments
+            columns:
+              - column: { name: code, value: "VHT" }
+              - column: { name: name, value: "Viettel High Tech" }
+        - insert:
+            tableName: departments
+            columns:
+              - column: { name: code, value: "VTS" }
+              - column: { name: name, value: "Viettel Solutions" }
+        - insert:
+            tableName: departments
+            columns:
+              - column: { name: code, value: "VCS" }
+              - column: { name: name, value: "Viettel Cyber Security" }
+        - insert:
+            tableName: departments
+            columns:
+              - column: { name: code, value: "VTD" }
+              - column: { name: name, value: "Viettel Digital" }
+        - insert:
+            tableName: departments
+            columns:
+              - column: { name: code, value: "VIDC" }
+              - column: { name: name, value: "Viettel IDC" }
+        - insert:
+            tableName: departments
+            columns:
+              - column: { name: code, value: "VTIT" }
+              - column: { name: name, value: "Viettel Software" }
+
+  # ── Add department_id to users ────────────────────────────────────
+  - changeSet:
+      id: 8-add-department-id-to-users
+      author: nandes
+      changes:
+        - addColumn:
+            tableName: users
+            columns:
+              - column:
+                  name: department_id
+                  type: int
+                  constraints:
+                    nullable: true
+        - addForeignKeyConstraint:
+            baseTableName: users
+            baseColumnNames: department_id
+            referencedTableName: departments
+            referencedColumnNames: id
+            constraintName: fk_users_department
+
+  # ── Add equipment and department_id to rooms ──────────────────────
+  - changeSet:
+      id: 9-add-columns-to-rooms
+      author: nandes
+      changes:
+        - addColumn:
+            tableName: rooms
+            columns:
+              - column:
+                  name: equipment
+                  type: varchar(500)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: department_id
+                  type: int
+                  constraints:
+                    nullable: true
+        - addForeignKeyConstraint:
+            baseTableName: rooms
+            baseColumnNames: department_id
+            referencedTableName: departments
+            referencedColumnNames: id
+            constraintName: fk_rooms_department
+
+  # ── Add approved_by to bookings ───────────────────────────────────
+  - changeSet:
+      id: 10-add-approved-by-to-bookings
+      author: nandes
+      changes:
+        - addColumn:
+            tableName: bookings
+            columns:
+              - column:
+                  name: approved_by
+                  type: int
+                  constraints:
+                    nullable: true
+        - addForeignKeyConstraint:
+            baseTableName: bookings
+            baseColumnNames: approved_by
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_bookings_approved_by
+
+  # ── Standardize existing status values to uppercase ───────────────
+  - changeSet:
+      id: 11-standardize-booking-status
+      author: nandes
+      changes:
+        - sql:
+            sql: >
+              UPDATE bookings SET status = UPPER(status)
+              WHERE status <> UPPER(status);
+
+  # ── Create notifications table ────────────────────────────────────
+  - changeSet:
+      id: 12-create-notifications-table
+      author: nandes
+      changes:
+        - createTable:
+            tableName: notifications
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: type
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: title
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: message
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: is_read
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: booking_id
+                  type: int
+                  constraints:
+                    nullable: true
+              - column:
+                  name: created_at
+                  type: timestamp
+                  defaultValueComputed: current_timestamp
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: notifications
+            baseColumnNames: user_id
+            referencedTableName: users
+            referencedColumnNames: id
+            constraintName: fk_notifications_user
+        - addForeignKeyConstraint:
+            baseTableName: notifications
+            baseColumnNames: booking_id
+            referencedTableName: bookings
+            referencedColumnNames: id
+            constraintName: fk_notifications_booking
+
+  # ── PostgreSQL EXCLUDE constraint for overlap prevention ──────────
+  - changeSet:
+      id: 13-add-booking-overlap-exclusion-constraint
+      author: nandes
+      preConditions:
+        - onFail: MARK_RAN
+        - dbms:
+            type: postgresql
+      changes:
+        - sql:
+            sql: >
+              CREATE EXTENSION IF NOT EXISTS btree_gist;
+        - sql:
+            sql: >
+              ALTER TABLE bookings
+              ADD CONSTRAINT no_overlapping_bookings
+              EXCLUDE USING gist (
+                room_id WITH =,
+                tsrange(start_time, end_time, '[)') WITH &&
+              )
+              WHERE (status IN ('PENDING', 'APPROVED'));

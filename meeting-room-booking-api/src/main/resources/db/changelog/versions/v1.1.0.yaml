@@ -1,0 +1,36 @@
+databaseChangeLog:
+  - changeSet:
+      id: 5-create-refresh-tokens-table
+      author: nandes
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: refresh_tokens
+      changes:
+        - createTable:
+            tableName: refresh_tokens
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: username
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: token
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: expiry_date
+                  type: timestamp
+                  constraints:
+                    nullable: false

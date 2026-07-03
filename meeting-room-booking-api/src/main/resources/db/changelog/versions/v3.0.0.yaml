@@ -1,0 +1,72 @@
+databaseChangeLog:
+  - changeSet:
+      id: 14-add-p2-p3-columns-to-bookings
+      author: nandes
+      changes:
+        - addColumn:
+            tableName: bookings
+            columns:
+              - column:
+                  name: is_deleted
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: title
+                  type: varchar(255)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: attendee_count
+                  type: int
+                  constraints:
+                    nullable: true
+              - column:
+                  name: cancel_reason
+                  type: text
+                  constraints:
+                    nullable: true
+              - column:
+                  name: rejected_reason
+                  type: text
+                  constraints:
+                    nullable: true
+              - column:
+                  name: checked_in_at
+                  type: timestamp
+                  constraints:
+                    nullable: true
+              - column:
+                  name: checked_out_at
+                  type: timestamp
+                  constraints:
+                    nullable: true
+              - column:
+                  name: recurring_group_id
+                  type: varchar(50)
+                  constraints:
+                    nullable: true
+
+  # ── Drop and recreate PostgreSQL EXCLUDE constraint for overlap prevention (excluding soft deleted) ──────────
+  - changeSet:
+      id: 15-recreate-booking-overlap-exclusion-constraint
+      author: nandes
+      preConditions:
+        - onFail: MARK_RAN
+        - dbms:
+            type: postgresql
+      changes:
+        - sql:
+            sql: >
+              ALTER TABLE bookings
+              DROP CONSTRAINT IF EXISTS no_overlapping_bookings;
+        - sql:
+            sql: >
+              ALTER TABLE bookings
+              ADD CONSTRAINT no_overlapping_bookings
+              EXCLUDE USING gist (
+                room_id WITH =,
+                tsrange(start_time, end_time, '[)') WITH &&
+              )
+              WHERE (status IN ('PENDING', 'APPROVED') AND is_deleted = false);

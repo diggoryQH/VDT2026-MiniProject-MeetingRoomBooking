@@ -1,0 +1,26 @@
+databaseChangeLog:
+  - changeSet:
+      id: "add-booking-attendees-table"
+      author: "antigravity"
+      changes:
+        - createTable:
+            tableName: "booking_attendees"
+            columns:
+              - column:
+                  name: "booking_id"
+                  type: "BIGINT"
+                  constraints:
+                    nullable: false
+                    foreignKeyName: "fk_booking_attendees_booking"
+                    references: "bookings(id)"
+              - column:
+                  name: "user_id"
+                  type: "BIGINT"
+                  constraints:
+                    nullable: false
+                    foreignKeyName: "fk_booking_attendees_user"
+                    references: "users(id)"
+        - addPrimaryKey:
+            tableName: "booking_attendees"
+            columnNames: "booking_id, user_id"
+            constraintName: "pk_booking_attendees"

@@ -1,0 +1,1157 @@
+openapi: 3.1.0
+info:
+  title: Meeting Room Booking API
+  description: API for managing meeting rooms and bookings with role-based access
+    control
+  version: 1.0.0
+servers:
+- url: http://localhost:8080
+  description: Generated server url
+security:
+- Bearer Token: []
+tags:
+- name: Room Management
+  description: CRUD operations for meeting rooms (Admin only for create/update/delete)
+- name: User Management
+  description: Endpoints for user profile and management
+- name: Authentication
+  description: Login and token refresh endpoints
+- name: Booking Management
+  description: CRUD operations for room bookings. Admin can manage all; users can
+    create and cancel their own.
+paths:
+  /api/v1/users:
+    get:
+      tags:
+      - User Management
+      summary: Get all users
+      description: Retrieve a paginated list of all users. Access restricted to SUPERADMIN.
+      operationId: getAllUsers
+      parameters:
+      - name: page
+        in: query
+        description: Page number (1-indexed)
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 1
+        example: 1
+      - name: limit
+        in: query
+        description: Items per page
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 10
+        example: 10
+      responses:
+        "200":
+          description: Users retrieved successfully
+          content:
+            application/json:
+              example:
+                status: success
+                data:
+                  content:
+                  - id: 1
+                    name: test name
+                    username: testuser
+                    email: test@example.com
+                    created_at: 2026-05-11T10:00:00
+                    updated_at: 2026-05-11T10:00:00
+                  page:
+                    size: 10
+                    number: 0
+                    totalElements: 1
+                    totalPages: 1
+        "400":
+          description: Failed to retrieve users
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponsePageUserResponse"
+        "401":
+          description: Unauthorized
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponsePageUserResponse"
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - User Management
+      summary: Create a new user
+      description: Register a new user. Role defaults to EMPLOYEE. Access restricted
+        to SUPERADMIN.
+      operationId: createUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserRequest"
+        required: true
+      responses:
+        "200":
+          description: User created successfully
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseUserResponse"
+        "400":
+          description: Failed to create user
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseUserResponse"
+        "401":
+          description: Unauthorized
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseUserResponse"
+      security:
+      - bearerAuth: []
+  /api/v1/rooms:
+    get:
+      tags:
+      - Room Management
+      summary: Get all rooms
+      description: Retrieve a list of all meeting rooms. Any authenticated user can
+        access this.
+      operationId: getAllRooms
+      parameters:
+      - name: page
+        in: query
+        description: Page number (1-indexed)
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 1
+        example: 1
+      - name: limit
+        in: query
+        description: Items per page
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 10
+        example: 10
+      responses:
+        "200":
+          description: Rooms retrieved successfully
+          content:
+            application/json:
+              example:
+                status: success
+                data:
+                  content:
+                  - name: Meeting Room A
+                    capacity: 10
+                    location: "Floor 3, Building A"
+                    is_available: true
+                    created_at: 2026-05-04T10:00:00
+                    updated_at: 2026-05-04T10:00:00
+                  page:
+                    size: 10
+                    number: 0
+                    totalElements: 1
+                    totalPages: 1
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              example:
+                status: unauthorized
+                message: Unauthorized
+    post:
+      tags:
+      - Room Management
+      summary: Create a new room
+      description: Create a new meeting room. Requires ADMIN role.
+      operationId: createRoom
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoomRequest"
+        required: true
+      responses:
+        "200":
+          description: Room created successfully
+          content:
+            application/json:
+              example:
+                status: success
+                data:
+                  name: Meeting Room A
+                  capacity: 10
+                  location: "Floor 3, Building A"
+                  is_available: true
+                  created_at: 2026-05-04T10:00:00
+                  updated_at: 2026-05-04T10:00:00
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              example:
+                status: failed
+                message: Validation failed
+                data:
+                  name: Room name is required
+                  capacity: Room capacity is required
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              example:
+                status: unauthorized
+                message: Unauthorized
+        "403":
+          description: Forbidden - Admin only
+          content:
+            application/json:
+              example:
+                status: failed
+                message: "Access denied: Only administrators can perform this action"
+  /api/v1/bookings:
+    get:
+      tags:
+      - Booking Management
+      summary: Get all bookings
+      description: Admin sees all bookings. Normal users see only their own bookings.
+      operationId: getAllBookings
+      parameters:
+      - name: status
+        in: query
+        description: "Filter by status (e.g., pending, approved, cancelled)"
+        required: false
+        schema:
+          type: string
+        example: pending
+      - name: page
+        in: query
+        description: Page number (1-indexed)
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 1
+        example: 1
+      - name: limit
+        in: query
+        description: Items per page
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 10
+        example: 10
+      responses:
+        "200":
+          description: Bookings retrieved successfully
+          content:
+            application/json:
+              example:
+                status: success
+                data:
+                  content:
+                  - id: 1
+                    user_id: 1
+                    room_id: 1
+                    start_time: 2026-05-10 09:00:00
+                    end_time: 2026-05-10 10:00:00
+                    status: pending
+                    description: Sprint Planning Meeting
+                    created_at: 2026-05-04 21:00:00
+                    updated_at: 2026-05-04 21:00:00
+                  page:
+                    size: 10
+                    number: 0
+                    totalElements: 1
+                    totalPages: 1
+        "401":
+          description: Unauthorized
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponsePageBookingResponse"
+    post:
+      tags:
+      - Booking Management
+      summary: Create a new booking
+      description: "Book a meeting room. The user is automatically identified from\
+        \ the authentication token. Validates: room availability, time overlap, past\
+        \ dates, and end time must be after start time."
+      operationId: createBooking
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookingRequest"
+        required: true
+      responses:
+        "200":
+          description: Booking created successfully
+          content:
+            application/json:
+              example:
+                status: success
+                data:
+                  id: 1
+                  user_id: 1
+                  room_id: 1
+                  start_time: 2026-05-10 09:00:00
+                  end_time: 2026-05-10 10:00:00
+                  status: pending
+                  description: Sprint Planning Meeting
+                  created_at: 2026-05-04 21:00:00
+                  updated_at: 2026-05-04 21:00:00
+        "400":
+          description: "Validation error, overlap, or past date"
+          content:
+            application/json:
+              example:
+                status: failed
+                message: The room is already booked for the selected time slot
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              example:
+                status: unauthorized
+                message: Unauthorized
+  /api/v1/auth/refresh:
+    post:
+      tags:
+      - Authentication
+      summary: Refresh Token
+      description: Exchange a valid refresh token for a new pair of access and refresh
+        tokens.
+      operationId: refresh
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+        required: true
+      responses:
+        "200":
+          description: Token refreshed successfully
+          content:
+            application/json:
+              example:
+                status: success
+                data:
+                  access_token: v2.local.newAccessToken...
+                  refresh_token: v2.local.newRefreshToken...
+        "400":
+          description: Invalid or expired refresh token
+          content:
+            application/json:
+              example:
+                status: failed
+                message: Invalid token
+  /api/v1/auth/login:
+    post:
+      tags:
+      - Authentication
+      summary: Login
+      description: Authenticate user with username and password. Returns access and
+        refresh tokens.
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+        required: true
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              example:
+                status: success
+                data:
+                  access_token: v2.local.abc123...
+                  refresh_token: v2.local.def456...
+        "400":
+          description: Invalid credentials
+          content:
+            application/json:
+              example:
+                status: failed
+                message: Invalid username or password
+  /api/v1/users/{id}:
+    get:
+      tags:
+      - User Management
+      summary: Get user by ID
+      description: Retrieve user details by their ID. Access restricted to SUPERADMIN.
+      operationId: getUserById
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: User retrieved successfully
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseUserResponse"
+        "400":
+          description: Failed to retrieve user
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseUserResponse"
+        "401":
+          description: Unauthorized
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseUserResponse"
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - User Management
+      summary: Delete user
+      description: Delete user by their ID. Access restricted to SUPERADMIN.
+      operationId: deleteUser
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: User deleted successfully
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseString"
+        "400":
+          description: Failed to delete user
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseString"
+        "401":
+          description: Unauthorized
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseString"
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - User Management
+      summary: Update user
+      description: Update user details by their ID. Access restricted to SUPERADMIN.
+      operationId: updateUser
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserRequest"
+        required: true
+      responses:
+        "200":
+          description: User updated successfully
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseUserResponse"
+        "400":
+          description: Failed to update user
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseUserResponse"
+        "401":
+          description: Unauthorized
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseUserResponse"
+      security:
+      - bearerAuth: []
+  /api/v1/rooms/{id}:
+    get:
+      tags:
+      - Room Management
+      summary: Get room by ID
+      description: Retrieve a specific meeting room by its ID.
+      operationId: getRoomById
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: Room found
+          content:
+            application/json:
+              example:
+                status: success
+                data:
+                  name: Meeting Room A
+                  capacity: 10
+                  location: "Floor 3, Building A"
+                  is_available: true
+                  created_at: 2026-05-04T10:00:00
+                  updated_at: 2026-05-04T10:00:00
+        "400":
+          description: Room not found
+          content:
+            application/json:
+              example:
+                status: failed
+                message: Room not found
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              example:
+                status: unauthorized
+                message: Unauthorized
+    delete:
+      tags:
+      - Room Management
+      summary: Delete a room
+      description: Delete a meeting room by ID. Requires ADMIN role.
+      operationId: deleteRoom
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: Room deleted successfully
+          content:
+            application/json:
+              example:
+                status: success
+                message: room deleted successfully
+        "400":
+          description: Room not found
+          content:
+            application/json:
+              example:
+                status: failed
+                message: Room not found
+        "401":
+          description: Unauthorized
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "403":
+          description: Forbidden - Admin only
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+    patch:
+      tags:
+      - Room Management
+      summary: Update a room
+      description: Update an existing meeting room. Requires ADMIN role.
+      operationId: updateRoom
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoomRequest"
+        required: true
+      responses:
+        "200":
+          description: Room updated successfully
+          content:
+            application/json:
+              example:
+                status: success
+                data:
+                  name: Updated Room Name
+                  capacity: 20
+                  location: "Floor 5, Building B"
+                  is_available: false
+                  created_at: 2026-05-04T10:00:00
+                  updated_at: 2026-05-04T15:30:00
+        "400":
+          description: Validation error or room not found
+          content:
+            application/json:
+              example:
+                status: failed
+                message: Room not found
+        "401":
+          description: Unauthorized
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseRoomResponse"
+        "403":
+          description: Forbidden - Admin only
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseRoomResponse"
+  /api/v1/bookings/{id}:
+    get:
+      tags:
+      - Booking Management
+      summary: Get booking by ID
+      description: Retrieve a specific booking. Admin can view any booking. Normal
+        users can only view their own.
+      operationId: getBookingById
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: Booking found
+          content:
+            application/json:
+              example:
+                status: success
+                data:
+                  id: 1
+                  user_id: 1
+                  room_id: 1
+                  start_time: 2026-05-10 09:00:00
+                  end_time: 2026-05-10 10:00:00
+                  status: pending
+                  description: Sprint Planning Meeting
+                  created_at: 2026-05-04 21:00:00
+                  updated_at: 2026-05-04 21:00:00
+        "400":
+          description: Booking not found
+          content:
+            application/json:
+              example:
+                status: failed
+                message: Booking not found
+        "401":
+          description: Unauthorized
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseBookingResponse"
+        "403":
+          description: Forbidden - not your booking
+          content:
+            application/json:
+              example:
+                status: failed
+                message: "Access denied: You can only view your own bookings"
+    delete:
+      tags:
+      - Booking Management
+      summary: Cancel a booking
+      description: Cancel (delete) a booking. Admin can cancel any booking. Normal
+        users can only cancel their own.
+      operationId: deleteBooking
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: Booking cancelled successfully
+          content:
+            application/json:
+              example:
+                status: success
+                message: Booking cancelled successfully
+        "400":
+          description: Booking not found
+          content:
+            application/json:
+              example:
+                status: failed
+                message: Booking not found
+        "401":
+          description: Unauthorized
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseVoid"
+        "403":
+          description: Forbidden - not your booking
+          content:
+            application/json:
+              example:
+                status: failed
+                message: "Access denied: You can only cancel your own bookings"
+    patch:
+      tags:
+      - Booking Management
+      summary: Update a booking
+      description: Update an existing booking. Only ADMIN role is allowed to edit
+        bookings.
+      operationId: updateBooking
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookingRequest"
+        required: true
+      responses:
+        "200":
+          description: Booking updated successfully
+          content:
+            application/json:
+              example:
+                status: success
+                data:
+                  id: 1
+                  user_id: 1
+                  room_id: 2
+                  start_time: 2026-05-10 14:00:00
+                  end_time: 2026-05-10 15:00:00
+                  status: confirmed
+                  description: "Updated: Design Review"
+                  created_at: 2026-05-04 21:00:00
+                  updated_at: 2026-05-04 22:00:00
+        "400":
+          description: Validation error or overlap
+          content:
+            application/json:
+              example:
+                status: failed
+                message: End time must be after start time
+        "401":
+          description: Unauthorized
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ApiResponseBookingResponse"
+        "403":
+          description: Forbidden - Admin only
+          content:
+            application/json:
+              example:
+                status: failed
+                message: "Access denied: Only administrators can edit bookings"
+  /api/v1/bookings/{id}/approve:
+    patch:
+      tags:
+      - Booking Management
+      summary: Approve a booking request
+      description: Approve a pending booking request. Only ADMIN role is allowed to
+        approve bookings.
+      operationId: approveBooking
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApproveBookingRequest"
+        required: true
+      responses:
+        "200":
+          description: Booking approved successfully
+          content:
+            application/json:
+              example:
+                status: success
+                data:
+                  id: 1
+                  user_id: 1
+                  room_id: 1
+                  start_time: 2026-04-28 09:00:00
+                  end_time: 2026-04-28 10:00:00
+                  status: approved
+                  description: POC (Proof Of Concept) Meeting
+                  created_at: 2022-01-01T00:00:00Z
+                  updated_at: 2022-01-01T00:00:00Z
+        "400":
+          description: Failed to approve booking
+          content:
+            application/json:
+              example:
+                status: failed
+                message: failed to approve booking
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              example:
+                status: unauthorized
+                message: Unauthorized
+  /api/v1/users/current:
+    get:
+      tags:
+      - User Management
+      summary: Get current logged-in user
+      description: Fetch details of the user associated with the provided authentication
+        token.
+      operationId: getCurrentUser
+      responses:
+        "200":
+          description: User retrieved successfully
+          content:
+            application/json:
+              example:
+                status: success
+                data:
+                  id: 1
+                  name: test name
+                  username: tes username
+                  email: test@example.com
+                  role: SUPERADMIN
+                  created_at: 2022-01-01T00:00:00Z
+                  updated_at: 2022-01-01T00:00:00Z
+                  bookings: []
+        "400":
+          description: Failed to retrieve user
+          content:
+            application/json:
+              example:
+                status: failed
+                message: failed to get current user
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              example:
+                status: unauthorized
+                message: Unauthorized
+      security:
+      - bearerAuth: []
+components:
+  schemas:
+    UserRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        username:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+    ApiResponseUserResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        data:
+          $ref: "#/components/schemas/UserResponse"
+        message:
+          type: string
+    BookingResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        status:
+          type: string
+        description:
+          type: string
+        user_id:
+          type: integer
+          format: int64
+        room_id:
+          type: integer
+          format: int64
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        username:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+        bookings:
+          type: array
+          items:
+            $ref: "#/components/schemas/BookingResponse"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    RoomRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        capacity:
+          type: integer
+          format: int32
+        location:
+          type: string
+          minLength: 1
+        is_available:
+          type: boolean
+      required:
+      - capacity
+      - is_available
+      - location
+      - name
+    BookingRequest:
+      type: object
+      properties:
+        status:
+          type: string
+        description:
+          type: string
+          minLength: 1
+        room_id:
+          type: integer
+          format: int64
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+      required:
+      - description
+      - end_time
+      - room_id
+      - start_time
+    RefreshRequest:
+      type: object
+      properties:
+        refresh_token:
+          type: string
+          minLength: 1
+      required:
+      - refresh_token
+    LoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          minLength: 1
+      required:
+      - password
+      - username
+    ApiResponseRoomResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        data:
+          $ref: "#/components/schemas/RoomResponse"
+        message:
+          type: string
+    RoomResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        capacity:
+          type: integer
+          format: int32
+        location:
+          type: string
+        is_available:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ApiResponseBookingResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        data:
+          $ref: "#/components/schemas/BookingResponse"
+        message:
+          type: string
+    ApproveBookingRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          minLength: 1
+      required:
+      - status
+    ApiResponsePageUserResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        data:
+          $ref: "#/components/schemas/PageObject"
+        message:
+          type: string
+    PageObject:
+      type: object
+      properties:
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        numberOfElements:
+          type: integer
+          format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        number:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+        size:
+          type: integer
+          format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserResponse"
+        empty:
+          type: boolean
+    PageableObject:
+      type: object
+      properties:
+        paged:
+          type: boolean
+        pageNumber:
+          type: integer
+          format: int32
+        pageSize:
+          type: integer
+          format: int32
+        unpaged:
+          type: boolean
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        offset:
+          type: integer
+          format: int64
+    SortObject:
+      type: object
+      properties:
+        sorted:
+          type: boolean
+        unsorted:
+          type: boolean
+        empty:
+          type: boolean
+    ApiResponsePageBookingResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        data:
+          $ref: "#/components/schemas/PageObject"
+        message:
+          type: string
+    ApiResponseString:
+      type: object
+      properties:
+        status:
+          type: string
+        data:
+          type: string
+        message:
+          type: string
+    ApiResponseVoid:
+      type: object
+      properties:
+        status:
+          type: string
+        data: {}
+        message:
+          type: string
+  securitySchemes:
+    Bearer Token:
+      type: http
+      description: Paste your PASETO access token here. Get one from POST /api/v1/auth/login
+      scheme: bearer
+      bearerFormat: PASETO
