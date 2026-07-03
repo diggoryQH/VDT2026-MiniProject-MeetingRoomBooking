@@ -1,4 +1,4 @@
-# 🏢 Hệ Thống Đặt Phòng Họp (Meeting Room Booking System)
+# 🏢 Hệ Thống Quản lý phòng học và đăng kí lịch sử dụng (Meeting Room Booking System)
 
 Ứng dụng full-stack quản lý việc đặt và sử dụng phòng họp trong tổ chức, bao gồm cổng quản trị (Admin), cổng duyệt đặt phòng (Approver) và cổng nhân viên (Employee). Dự án được xây dựng trên nền tảng công nghệ hiện đại, đảm bảo khả năng mở rộng, bảo mật và trải nghiệm người dùng chất lượng cao.
 
@@ -305,16 +305,4 @@ meeting-room-booking/
 
 ---
 
-## 🤝 Đóng Góp
 
-1. Fork repository.
-2. Tạo branch mới cho tính năng: `git checkout -b feature/TinhNangMoi`
-3. Commit thay đổi: `git commit -m 'Thêm tính năng mới'`
-4. Push lên branch: `git push origin feature/TinhNangMoi`
-5. Tạo **Pull Request**.
-
----
-
-## 📄 Giấy Phép
-
-Dự án này được phát triển bởi **Nandes Tech**.
