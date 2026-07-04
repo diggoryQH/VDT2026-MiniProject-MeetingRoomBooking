@@ -24,7 +24,7 @@ const form = reactive({
   email: '',
   username: '',
   password: '',
-  role: 'EMPLOYEE' as 'SUPERADMIN' | 'EMPLOYEE',
+  role: 'EMPLOYEE' as User['role'],
   department_id: null as number | null
 });
 

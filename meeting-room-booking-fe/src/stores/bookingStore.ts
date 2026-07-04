@@ -24,7 +24,7 @@ export const useBookingStore = defineStore('booking', {
           params: { page, limit, ...filters }
         });
         
-        const { content, page: pageInfo } = response.data.data;
+        const { content, number, totalPages } = response.data.data;
         
         if (append) {
           this.bookings = [...this.bookings, ...content];
@@ -32,8 +32,8 @@ export const useBookingStore = defineStore('booking', {
           this.bookings = content;
         }
         
-        this.currentPage = pageInfo.number + 1;
-        this.totalPages = pageInfo.totalPages;
+        this.currentPage = number + 1;
+        this.totalPages = totalPages;
         this.hasMore = this.currentPage < this.totalPages;
       } catch (err: any) {
         this.error = err.response?.data?.message || 'Failed to fetch bookings';
@@ -79,8 +79,8 @@ export const useBookingStore = defineStore('booking', {
       this.error = null;
       try {
         await apiClient.patch(`/api/v1/bookings/${id}/approve`);
-        const idx = this.bookings.findIndex(b => b.id === id);
-        if (idx !== -1) this.bookings[idx].status = 'APPROVED';
+        const booking = this.bookings.find(b => b.id === id);
+        if (booking) booking.status = 'APPROVED';
         return true;
       } catch (err: any) {
         this.error = err.response?.data?.message || 'Failed to approve booking';
@@ -92,8 +92,8 @@ export const useBookingStore = defineStore('booking', {
       this.error = null;
       try {
         await apiClient.patch(`/api/v1/bookings/${id}/reject`, { reason });
-        const idx = this.bookings.findIndex(b => b.id === id);
-        if (idx !== -1) this.bookings[idx].status = 'REJECTED';
+        const booking = this.bookings.find(b => b.id === id);
+        if (booking) booking.status = 'REJECTED';
         return true;
       } catch (err: any) {
         this.error = err.response?.data?.message || 'Failed to reject booking';
@@ -105,10 +105,10 @@ export const useBookingStore = defineStore('booking', {
       this.error = null;
       try {
         await apiClient.patch(`/api/v1/bookings/${id}/cancel`, { reason });
-        const idx = this.bookings.findIndex(b => b.id === id);
-        if (idx !== -1) {
-          this.bookings[idx].status = 'CANCELLED';
-          this.bookings[idx].cancel_reason = reason;
+        const booking = this.bookings.find(b => b.id === id);
+        if (booking) {
+          booking.status = 'CANCELLED';
+          booking.cancel_reason = reason;
         }
         return true;
       } catch (err: any) {
@@ -121,8 +121,8 @@ export const useBookingStore = defineStore('booking', {
       this.error = null;
       try {
         await apiClient.patch(`/api/v1/bookings/${id}/checkin`);
-        const idx = this.bookings.findIndex(b => b.id === id);
-        if (idx !== -1) this.bookings[idx].status = 'CHECKED_IN';
+        const booking = this.bookings.find(b => b.id === id);
+        if (booking) booking.status = 'CHECKED_IN';
         return true;
       } catch (err: any) {
         this.error = err.response?.data?.message || 'Failed to check-in';
@@ -134,8 +134,8 @@ export const useBookingStore = defineStore('booking', {
       this.error = null;
       try {
         await apiClient.patch(`/api/v1/bookings/${id}/checkout`);
-        const idx = this.bookings.findIndex(b => b.id === id);
-        if (idx !== -1) this.bookings[idx].status = 'COMPLETED';
+        const booking = this.bookings.find(b => b.id === id);
+        if (booking) booking.status = 'COMPLETED';
         return true;
       } catch (err: any) {
         this.error = err.response?.data?.message || 'Failed to check-out';

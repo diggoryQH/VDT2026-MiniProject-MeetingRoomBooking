@@ -105,7 +105,7 @@ const handleExport = async () => {
 const formatDateTime = (dateStr: string) => {
   if (!dateStr) return '';
   const [date, time] = dateStr.split(' ');
-  return `${time.substring(0, 5)} - ${date}`;
+  return `${time?.substring(0, 5) || ''} - ${date}`;
 };
 
 const getStatusColor = (status: string) => {
@@ -146,6 +146,7 @@ const getStatusLabel = (status: string) => {
           variant="outline" 
           size="sm" 
           @click="handleExport"
+          label="Xuất Excel"
         >
           <template #icon>
             <DocumentArrowDownIcon class="w-5 h-5" />
@@ -242,6 +243,7 @@ const getStatusLabel = (status: string) => {
               size="sm" 
               :disabled="bookingStore.currentPage === 1"
               @click="fetchPage(bookingStore.currentPage - 1)"
+              label="Trước"
             >
               Trước
             </AppButton>
@@ -250,6 +252,7 @@ const getStatusLabel = (status: string) => {
               size="sm" 
               :disabled="bookingStore.currentPage === bookingStore.totalPages"
               @click="fetchPage(bookingStore.currentPage + 1)"
+              label="Sau"
             >
               Sau
             </AppButton>

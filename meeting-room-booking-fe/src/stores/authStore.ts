@@ -12,6 +12,7 @@ export const useAuthStore = defineStore('auth', {
     isAuthenticated: !!localStorage.getItem('access_token'),
     isLoading: false,
     error: null,
+    pendingVerificationEmail: null,
   }),
 
   actions: {
@@ -73,6 +74,74 @@ export const useAuthStore = defineStore('auth', {
         if (err.response?.status === 401) {
           this.logout();
         }
+      }
+    },
+
+    async register(userData: any) {
+      this.isLoading = true;
+      this.error = null;
+      try {
+        const response = await apiClient.post('/api/v1/auth/register', userData);
+        if (response.data?.data?.access_token) {
+          const { access_token, refresh_token } = response.data.data;
+          this.token = access_token;
+          this.refresh_token = refresh_token;
+          this.isAuthenticated = true;
+          localStorage.setItem('access_token', access_token);
+          localStorage.setItem('refresh_token', refresh_token);
+          await this.getCurrentUser();
+        } else {
+          // If OTP required
+          this.pendingVerificationEmail = userData.email;
+        }
+        return true;
+      } catch (err: any) {
+        this.error = err.response?.data?.message || 'Registration failed';
+        return false;
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    async verifyOtp(otp: string) {
+      this.isLoading = true;
+      this.error = null;
+      try {
+        const response = await apiClient.post('/api/v1/auth/verify', { 
+          email: this.pendingVerificationEmail, 
+          otp 
+        });
+        // Assuming verify returns token
+        if (response.data?.data?.access_token) {
+          const { access_token, refresh_token } = response.data.data;
+          this.token = access_token;
+          this.refresh_token = refresh_token;
+          this.isAuthenticated = true;
+          localStorage.setItem('access_token', access_token);
+          localStorage.setItem('refresh_token', refresh_token);
+          await this.getCurrentUser();
+        }
+        return true;
+      } catch (err: any) {
+        this.error = err.response?.data?.message || 'Verification failed';
+        return false;
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    async resendOtp() {
+      if (!this.pendingVerificationEmail) return false;
+      this.isLoading = true;
+      this.error = null;
+      try {
+        await apiClient.post('/api/v1/auth/resend-otp', { email: this.pendingVerificationEmail });
+        return true;
+      } catch (err: any) {
+        this.error = err.response?.data?.message || 'Failed to resend OTP';
+        return false;
+      } finally {
+        this.isLoading = false;
       }
     },
 

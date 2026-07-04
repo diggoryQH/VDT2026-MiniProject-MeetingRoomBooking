@@ -44,8 +44,8 @@ export const useNotificationStore = defineStore('notification', {
     async markAsRead(id: number) {
       try {
         await apiClient.patch(`/api/v1/notifications/${id}/read`);
-        const idx = this.notifications.findIndex(n => n.id === id);
-        if (idx !== -1) this.notifications[idx].is_read = true;
+        const notification = this.notifications.find(n => n.id === id);
+        if (notification) notification.is_read = true;
         this.unreadCount = Math.max(0, this.unreadCount - 1);
       } catch (err: any) {
         this.error = err.response?.data?.message || 'Failed to mark as read';

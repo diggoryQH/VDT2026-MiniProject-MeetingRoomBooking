@@ -7,7 +7,7 @@ export interface Booking {
   room_department_id?: number;
   start_time: string;
   end_time: string;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'CHECKED_IN' | 'COMPLETED' | 'NO_SHOW';
   description: string;
   approved_by?: number;
   approved_by_name?: string;
@@ -15,6 +15,8 @@ export interface Booking {
   cancel_reason?: string;
   created_at: string;
   updated_at: string;
+  title?: string;
+  attendee_count?: number;
 }
 
 export interface DayScheduleData {

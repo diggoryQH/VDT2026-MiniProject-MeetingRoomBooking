@@ -15,8 +15,8 @@ export interface UserRequest {
   email: string;
   username: string;
   password?: string;
-  role: 'ADMIN' | 'APPROVER' | 'EMPLOYEE';
-  department_id?: number;
+  role: 'ADMIN' | 'SUPERADMIN' | 'APPROVER' | 'EMPLOYEE';
+  department_id?: number | null;
 }
 
 export interface UserState {

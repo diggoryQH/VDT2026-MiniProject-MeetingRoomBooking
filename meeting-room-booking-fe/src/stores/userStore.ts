@@ -24,7 +24,7 @@ export const useUserStore = defineStore('user', {
           params: { page, limit }
         });
         
-        const { content, page: pageInfo } = response.data.data;
+        const { content, number, totalPages } = response.data.data;
 
         if (append) {
           this.users = [...this.users, ...content];
@@ -32,8 +32,8 @@ export const useUserStore = defineStore('user', {
           this.users = content;
         }
 
-        this.currentPage = pageInfo.number + 1;
-        this.totalPages = pageInfo.totalPages;
+        this.currentPage = number + 1;
+        this.totalPages = totalPages;
         this.hasMore = this.currentPage < this.totalPages;
       } catch (err: any) {
         this.error = err.response?.data?.message || 'Failed to fetch users';

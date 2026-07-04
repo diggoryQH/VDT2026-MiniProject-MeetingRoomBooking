@@ -19,7 +19,7 @@ const authStore = useAuthStore();
 const isCreateModalOpen = ref(false);
 const isDetailModalOpen = ref(false);
 const selectedBooking = ref<any>(null);
-const selectedDateForCreate = ref(new Date().toISOString().split('T')[0]);
+const selectedDateForCreate = ref(new Date().toISOString().split('T')[0] || '');
 const currentViewStart = ref('');
 const currentViewEnd = ref('');
 const currentFilters = ref<Record<string, any>>({});
@@ -58,11 +58,11 @@ const fetchCalendarData = async () => {
 };
 
 const handleDatesSet = (arg: any) => {
-  currentViewStart.value = arg.startStr.split('T')[0];
+  currentViewStart.value = arg.startStr.split('T')[0] || '';
   // arg.end is exclusive in fullcalendar, so subtract 1 day to get the visual end
   const end = new Date(arg.end);
   end.setDate(end.getDate() - 1);
-  currentViewEnd.value = end.toISOString().split('T')[0];
+  currentViewEnd.value = end.toISOString().split('T')[0] || '';
   
   fetchCalendarData();
 };
@@ -90,20 +90,20 @@ const calendarOptions = computed(() => ({
     isDetailModalOpen.value = true;
   },
   dateClick: (info: any) => {
-    selectedDateForCreate.value = info.dateStr.split('T')[0];
+    selectedDateForCreate.value = info.dateStr.split('T')[0] || '';
     isCreateModalOpen.value = true;
   },
   height: 'auto',
   slotMinTime: '08:00:00',
   slotMaxTime: '20:00:00',
   slotLabelFormat: {
-    hour: '2-digit',
-    minute: '2-digit',
+    hour: '2-digit' as const,
+    minute: '2-digit' as const,
     hour12: false
   },
   eventTimeFormat: {
-    hour: '2-digit',
-    minute: '2-digit',
+    hour: '2-digit' as const,
+    minute: '2-digit' as const,
     hour12: false
   },
   datesSet: handleDatesSet
